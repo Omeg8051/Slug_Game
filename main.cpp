@@ -248,7 +248,7 @@ int main(int argc, char* argv[]){
 	if(SDL_Init(SDL_INIT_EVERYTHING) < 0){
 		cout << "oof\n";
 	} else {
-		cout << "=============================\n|                           |\n|         Slug Game         |\n|                           |\n=============================\nleft click to set target fot the slug.\nright click to select a slug.\nmiddle click to add another slug\t";
+		cout << "=============================\n|                           |\n|         Slug Game         |\n|                           |\n=============================\nleft click to set target fot the slug.\nright click to select a slug.\nmiddle click to add another slug\n";
 	}
 	
 	cout << "vulkan status: " <<SDL_Vulkan_LoadLibrary(NULL) << endl;
