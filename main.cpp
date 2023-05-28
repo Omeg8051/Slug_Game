@@ -7,18 +7,19 @@ patientce.
 left click to set target fot the slug.
 right click to select a slug.
 middle click to spawn a new slug.
+click mouse 4 and drag to create new plaform
 
 */
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
+//#include <SDL2/SDL_vulkan.h>
 #include <time.h>
 #include <list>
 #include <math.h>
 #include <iostream>
 
 #define CHK_TH 5
-#define IDL_SPD_DIV 5
+#define IDL_SPD_DIV 3
 #define SEL_TH 10
 
 using namespace std;
@@ -38,7 +39,7 @@ class Thingy{
 
 	void runFrame(){
 		//cout  <<"here\n";
-		ly+=jcnt?-5:(ly<474);
+		ly+=jcnt?-5:fall;
 		jcnt -= jcnt!=0;
 
 		if(state == 0){
@@ -51,7 +52,8 @@ class Thingy{
 				} 
 				tx += (50 + (rand() % 100)) * ((rand()%2)?1:-1);
 				tx += tx>640?-640:tx<0?640:0;
-				ty = ly - (rand() % 10);
+				ty = ly - (rand() % 300) + 150;
+				ty += ty>474?-150:tx<0?150:0;
 				nxt_mov = 200 + (rand() % 400);
 				state = 1;
 				patience = 5;
@@ -64,10 +66,15 @@ class Thingy{
 			lx += (abs(lx - tx) > CHK_TH)*(tx<lx?-1:1)*(pace || !(++stsub%IDL_SPD_DIV));
 			face = (tx>lx);
 
-			if(abs(lx - tx) < 20 && (ly - ty) >= 4 && ly>=474 && patience){
-				jcnt = 10;
+			if(abs(lx - tx) < abs(ly - ty) && (ly - ty) >= 4 && !fall && patience && !jcnt){
+				jcnt = abs(ly - ty) / 5 + 5;
+				jcnt = jcnt > 15?15:jcnt;
 				patience--;
 				if (!patience)state = 0;
+			}
+
+			if(ly < ty && abs(lx - tx) < abs(ly - ty) && !fall){
+				ly++;
 			}
 
 			if(abs(lx - tx) <= CHK_TH && abs(ly - ty) <= CHK_TH){
@@ -87,6 +94,34 @@ class Thingy{
 			
 		}
 
+	}
+
+	bool check_fall(list<SDL_Rect*> *lp){
+		SDL_Rect slf;
+		slf.x = lx-8;
+		slf.y = ly-4;
+		slf.w = 17;
+		slf.h = 9;
+
+		SDL_Rect it;
+
+		if(ly > 474){
+			fall = 0;
+			return 0;
+			}
+
+		for(SDL_Rect* l : *lp){
+			if(l->y < (ly+4))continue;
+			
+			if(SDL_IntersectRect(l,&slf,&it)){
+				fall = 0;
+				return 0;
+			}
+			
+		}
+			
+		fall = 1;
+		return 1;
 	}
 
 	void setState(int s){
@@ -191,7 +226,7 @@ class Thingy{
 	unsigned int nxt_mov = 0;
 	bool pace = 0;
 	unsigned char stsub = 0;
-	bool selected = 0;
+	bool selected = 0, fall= 0;
 	//unsigned int state;
 	
 	/*
@@ -206,6 +241,8 @@ Thingy* slug;
 
 std::list<Thingy*> jar;
 
+std::list<SDL_Rect*> plt;
+
 void run_all_Thingy(list<Thingy*>* chain){
 	
 	for (Thingy* ct : *chain)ct->runFrame();
@@ -214,6 +251,11 @@ void run_all_Thingy(list<Thingy*>* chain){
 void render_all_Thingy(list<Thingy*>* chain,SDL_Renderer* rd){
 	for (Thingy* ct : *chain)ct->render_Creature(rd);
 }
+
+void chk_fall_all_Thingy(list<Thingy*>* chain,list<SDL_Rect*>* plat){
+	for (Thingy* ct : *chain)ct->check_fall(plat);
+}
+
 
 Thingy* add_Thingy(list<Thingy*>* chain,int x,int y){
 	Thingy* newSlug = (Thingy*)malloc(sizeof(Thingy));
@@ -224,7 +266,7 @@ Thingy* add_Thingy(list<Thingy*>* chain,int x,int y){
 }
 
 Thingy* select_new_thingy(Thingy** ct,int x,int y,list<Thingy*> *chain){
-	Thingy* tt;
+	Thingy* tt = NULL;
 	for (Thingy* cs : *chain){
 		if(cs->near(x,y)){
 			//for (Thingy* cl : *chain)cl->select(0);
@@ -238,20 +280,42 @@ Thingy* select_new_thingy(Thingy** ct,int x,int y,list<Thingy*> *chain){
 	return tt;
 }
 
+void add_plat(list<SDL_Rect*> *plt,int x,int y,int w, int h){
+
+	SDL_Rect* newPlt = (SDL_Rect*)malloc(sizeof(SDL_Rect));
+	newPlt->x = x;
+	newPlt->y = y;
+	newPlt->w = w;
+	newPlt->h = h;
+	
+	plt->push_front(newPlt);
+	return;
+}
+
+void render_all_Plat(list<SDL_Rect*>* plt,SDL_Renderer* rd){
+	SDL_SetRenderDrawColor(rd,150,150,150,255);
+
+	for (SDL_Rect* pl : *plt)SDL_RenderDrawRect(rd,pl);
+}
+
+
 int main(int argc, char* argv[]){
 	srand(time(NULL));
 	
 	slug = add_Thingy(&jar,100,100);
+
+	add_plat(&plt,0,0,100,25);
+
 	cout << jar.size() << endl;
 	slug->select(1);
 
 	if(SDL_Init(SDL_INIT_EVERYTHING) < 0){
 		cout << "oof\n";
 	} else {
-		cout << "=============================\n|                           |\n|         Slug Game         |\n|                           |\n=============================\nleft click to set target fot the slug.\nright click to select a slug.\nmiddle click to add another slug\n";
+		cout << "=============================\n|                           |\n|         Slug Game         |\n|                           |\n=============================\nleft click to set target fot the slug.\nright click to select a slug.\nmiddle click to add another slug\nclick mouse 4 and drag to create new plaform\n";
 	}
 	
-	cout << "vulkan status: " <<SDL_Vulkan_LoadLibrary(NULL) << endl;
+	//cout << "vulkan status: " <<SDL_Vulkan_LoadLibrary(NULL) << endl;
 
 	win = SDL_CreateWindow(
 		"Slug game",
@@ -259,7 +323,7 @@ int main(int argc, char* argv[]){
 		300,
 		640,
 		480,
-		SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN
+		SDL_WINDOW_SHOWN
 		);
 
 	rd = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
@@ -272,25 +336,15 @@ int main(int argc, char* argv[]){
 	}
 	//SDL_SetRenderTarget(rd, NULL);
 
-	SDL_RenderClear(rd);
-	SDL_SetRenderDrawColor(rd,255, 255, 255,255);
-	for(unsigned int i = 0;i < 640;i+=8){
-		SDL_RenderDrawLine(rd,0,0,i,479);
-
-	}
-	for(unsigned int i = 0;i <= 480;i+=8){
-		SDL_RenderDrawLine(rd,0,0,639,i);
-
-	}
-
 	
-	SDL_RenderPresent(rd);
-
-
 	bool g_run = 1;
 	bool bd = false;
 
 	int x = 0,y = 0,st = 0;
+
+	int psx,psy,pex,pey;
+	bool mkplt = 0;
+	SDL_Rect nplt;
 	while (g_run){
 		SDL_Event eve;
 	
@@ -308,18 +362,33 @@ int main(int argc, char* argv[]){
 				}else if((int)eve.button.button == 2){
 					//cout << "add Thingy\n";
 					add_Thingy(&jar,eve.button.x,eve.button.y);
+				}else if((int)eve.button.button == 5){
+					mkplt = 1;
+					psx = eve.button.x;
+					psy = eve.button.y;
+					
 				}
 				
 				//cout <set_pos< "mouse butten " << (int)eve.button.button << " pressed\n";
 			} else if(eve.type == SDL_MOUSEBUTTONUP){
-				
+				if((int)eve.button.button == 5){
+					if(mkplt){
+						mkplt = 0;
+						add_plat(&plt,nplt.x,nplt.y,nplt.w,nplt.h);
+					}
+				}
 				//cout << "mouse butten " << (int)eve.button.button << " released\n";
 			}
 			
-			if(eve.type == SDL_MOUSEMOTION || eve.type == SDL_MOUSEBUTTONDOWN){
-
-
+			if(eve.type == SDL_MOUSEMOTION && mkplt){
+				pex = eve.button.x;
+				pey = eve.button.y;
 				
+				nplt.x = psx<pex?psx:pex;
+				nplt.y = psy<pey?psy:pey;
+
+				nplt.w = abs(psx - pex);
+				nplt.h = abs(psy - pey);
 							
 			}
 
@@ -328,16 +397,29 @@ int main(int argc, char* argv[]){
 		/*
 		runframe
 		*/
+		chk_fall_all_Thingy(&jar,&plt);
 		run_all_Thingy(&jar);
+			
 		
 		/*
 		render begin
 
 		*/
+
+
 		SDL_RenderClear(rd);
 		SDL_SetRenderDrawColor(rd,0, 0, 0,255);
 
 		SDL_RenderFillRect(rd,NULL);
+		
+		if(mkplt){
+			SDL_SetRenderDrawColor(rd,100, 255, 50,255);
+			SDL_RenderFillRect(rd,&nplt);
+		
+
+		}
+		
+		
 		SDL_SetRenderDrawColor(rd,255, 255, 255,255);
 
 		SDL_RenderDrawLine(rd,0,0,eve.button.x,eve.button.y);
@@ -346,7 +428,7 @@ int main(int argc, char* argv[]){
 
 		SDL_RenderDrawPoint(rd,x,y);
 				
-	
+		render_all_Plat(&plt,rd);
 				
 		//slug.render_Creature(rd);
 		render_all_Thingy(&jar,rd);
