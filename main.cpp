@@ -1,5 +1,5 @@
 /*
-This is a stupid project about a stupid slug
+This is a stupid project about stupid slugs
 That follows where you click. and will go
 idle when reaching the target or run out of 
 patientce.
@@ -7,7 +7,6 @@ patientce.
 left click to set target fot the slug.
 right click to select a slug.
 middle click to spawn a new slug.
-click mouse 4 and drag to create new plaform
 
 */
 
@@ -101,7 +100,7 @@ class Thingy{
 		slf.x = lx-8;
 		slf.y = ly-4;
 		slf.w = 17;
-		slf.h = 9;
+		slf.h = 10;
 
 		SDL_Rect it;
 
@@ -143,13 +142,13 @@ class Thingy{
 	if(face){
 		for(int j = -15;j<=6;j++){
 			SDL_RenderDrawLine(rd,
-			(lx+j),(ly-((j<-10)?-1:(j<-8)?1:(j<-5)?2:(j<-4)?3:(j<-3)?4:(j<1)?5:(j<5)?4:2)),
+			(lx+j),(ly-((j<-10)?-1:(j<-8)?0:(j<-5)?2:(j<-4)?3:(j<-3)?4:(j<1)?5:(j<5)?4:2)),
 			(lx+j),(ly+((j<-13)?3:(j<-3)?4:(j<3)?4:(j<5)?4:2)));
 		}
 	} else {
 		for(int j = 15;j>=-6;j--){
 			SDL_RenderDrawLine(rd,
-			(lx+j),(ly-((j>10)?-1:(j>8)?1:(j>5)?2:(j>4)?3:(j>3)?4:(j>-1)?5:(j>-5)?4:2)),
+			(lx+j),(ly-((j>10)?-1:(j>8)?0:(j>5)?2:(j>4)?3:(j>3)?4:(j>-1)?5:(j>-5)?4:2)),
 			(lx+j),(ly+((j>13)?3:(j>3)?4:(j>-3)?4:(j>-5)?4:2)));
 		}
 	}
@@ -312,7 +311,7 @@ int main(int argc, char* argv[]){
 	if(SDL_Init(SDL_INIT_EVERYTHING) < 0){
 		cout << "oof\n";
 	} else {
-		cout << "=============================\n|                           |\n|         Slug Game         |\n|                           |\n=============================\nleft click to set target fot the slug.\nright click to select a slug.\nmiddle click to add another slug\nclick mouse 4 and drag to create new plaform\n";
+		cout << "=============================\n|                           |\n|         Slug Game         |\n|                           |\n=============================\nleft click to set target fot the slug.\nmiddle click to select a slug.\nright click to add another slug\nclick mouse 4 and drag to create new plaform\n";
 	}
 	
 	//cout << "vulkan status: " <<SDL_Vulkan_LoadLibrary(NULL) << endl;
@@ -356,10 +355,10 @@ int main(int argc, char* argv[]){
 					x = eve.button.x;
 					y = eve.button.y;
 					slug->setTarget(x ,y);
-				}else if((int)eve.button.button == 3){
+				}else if((int)eve.button.button == 2){
 					//slug->select(0);
 					select_new_thingy(&slug,eve.button.x,eve.button.y,&jar);
-				}else if((int)eve.button.button == 2){
+				}else if((int)eve.button.button == 3){
 					//cout << "add Thingy\n";
 					add_Thingy(&jar,eve.button.x,eve.button.y);
 				}else if((int)eve.button.button == 5){
@@ -440,6 +439,7 @@ int main(int argc, char* argv[]){
 	}
 	SDL_DestroyWindow(win);
 	for(Thingy* ct: jar){free(ct);}
+	for(SDL_Rect* ct: plt){free(ct);}
 SDL_Quit();
 return 0;
 }
